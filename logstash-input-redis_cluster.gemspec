@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
 
-  s.name            = 'logstash-input-redis'
+  s.name            = 'logstash-input-redis_cluster'
   s.version         = '3.7.1'
   s.licenses        = ['Apache License (2.0)']
   s.summary         = "Reads events from a Redis instance"
@@ -25,6 +25,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'logstash-codec-json'
   s.add_runtime_dependency 'redis', '>= 4.0.1', '< 5'
 
-  s.add_development_dependency 'logstash-devutils'
+  s.add_development_dependency 'logstash-devutils', '>= 0.0.16'
+  s.add_development_dependency 'redis-cluster-client'
 end
 

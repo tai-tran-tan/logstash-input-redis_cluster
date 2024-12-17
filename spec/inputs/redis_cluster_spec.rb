@@ -1,6 +1,7 @@
+# encoding: utf-8
+require 'logstash/devutils/rspec/shared_examples'
 require "logstash/devutils/rspec/spec_helper"
-require "logstash/devutils/rspec/shared_examples"
-require 'logstash/inputs/redis'
+require 'logstash/inputs/redis_cluster'
 require 'securerandom'
 
 def populate(key, event_count)
