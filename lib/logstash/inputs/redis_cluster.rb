@@ -3,6 +3,7 @@ require "logstash/namespace"
 require "logstash/inputs/base"
 require "logstash/inputs/threadable"
 require 'redis'
+require 'redis-cluster-client'
 require "stud/interval"
 
 # This input will read events from a Redis instance; it supports both Redis channels and lists.
@@ -17,18 +18,19 @@ require "stud/interval"
 # `batch_count` note: If you use the `batch_count` setting, you *must* use a Redis version 2.6.0 or
 # newer. Anything older does not support the operations used by batching.
 #
-module LogStash module Inputs class Redis < LogStash::Inputs::Threadable
+module LogStash module Inputs class RedisCluster < LogStash::Inputs::Threadable
   BATCH_EMPTY_SLEEP = 0.25
 
   config_name "redis_cluster"
 
   default :codec, "json"
 
-  # The hostname of your Redis server.
-  config :host, :validate => :string, :default => "127.0.0.1"
-
+  # The list of your Redis cluster nodes.
+  config :nodes, :list => true, :validate => :string, :default => []
+  config :fixed_hostname, :validate => :string
+  
   # The port to connect on.
-  config :port, :validate => :number, :default => 6379
+  # config :port, :validate => :number, :default => 6379
 
   # SSL
   config :ssl, :validate => :boolean, :default => false
@@ -63,6 +65,10 @@ module LogStash module Inputs class Redis < LogStash::Inputs::Threadable
   public
 
   def register
+    host = self.find_redis_node(@key).split(':')
+    @logger.info("HOST " + host.to_s)
+    @host = host.first
+    @port = host.last
     @redis_url = @path.nil? ? "redis://#{@password}@#{@host}:#{@port}/#{@db}" : "#{@password}@#{@path}/#{@db}"
 
     # just switch on data_type once
@@ -80,6 +86,7 @@ module LogStash module Inputs class Redis < LogStash::Inputs::Threadable
     @list_method = batched? ? method(:list_batch_listener) : method(:list_single_listener)
 
     @identity = "#{@redis_url} #{@data_type}:#{@key}"
+    puts "Identity: " + @identity
     @logger.info("Registering Redis", :identity => @identity)
   end # def register
 
@@ -95,6 +102,45 @@ module LogStash module Inputs class Redis < LogStash::Inputs::Threadable
 
   # private methods -----------------------------
   private
+
+  def find_redis_node(key)
+    username = 'foo'
+    password = 'bitnami'
+    fixed_hostname = @fixed_hostname
+    @logger.info("Initializing plugin")
+    begin
+      cluster = RedisClient.cluster(nodes: @nodes, fixed_hostname: fixed_hostname).new_client
+      
+      puts "Cluster initialized"
+      msg = "Pinging cluster... <= " + cluster.call('PING')
+      @logger.info(msg)
+      puts msg
+
+      slot = cluster.call('CLUSTER', 'KEYSLOT', key).to_i
+      return cluster.call('CLUSTER', 'NODES').lines
+        .map { |line| 
+          arr = line.split 
+          { :host => arr[1].split('@').first, :flags => arr[2], :slot => arr.last }
+        }
+        .filter { |arr| arr[:flags].include? 'master' }
+        .map { |arr| 
+          range = arr[:slot].split '-' 
+          if !!fixed_hostname
+            port = arr[:host].split(':').last
+            host = "#{fixed_hostname}:#{port}"
+          else
+            host = arr[:host]
+          end
+          { :host => host, :range => Range.new(range.first.to_i, range.last.to_i) }
+        }
+        .filter { |arr| arr[:range].include? slot }
+        .map { |h| h[:host]}
+        .first
+    rescue Exception => e
+      puts e
+      puts e.backtrace
+    end
+  end
 
   def batched?
     @batch_count > 1
@@ -142,18 +188,6 @@ module LogStash module Inputs class Redis < LogStash::Inputs::Threadable
 
     redis
   end # def connect
-
-  # private
-  def load_batch_script(redis)
-    #A Redis Lua EVAL script to fetch a count of keys
-    redis_script = <<EOF
-      local batchsize = tonumber(ARGV[1])
-      local result = redis.call(\'#{@command_map.fetch('lrange', 'lrange')}\', KEYS[1], 0, batchsize)
-      redis.call(\'#{@command_map.fetch('ltrim', 'ltrim')}\', KEYS[1], batchsize + 1, -1)
-      return result
-EOF
-    @redis_script_sha = redis.script(:load, redis_script)
-  end
 
   # private
   def queue_event(msg, output_queue, channel=nil)
@@ -344,6 +378,18 @@ EOF
         @logger.info("Unsubscribed", :channel => channel, :count => count)
       end
     end
+  end
+
+  # private
+  def load_batch_script(redis)
+    #A Redis Lua EVAL script to fetch a count of keys
+    redis_script = <<EOF
+      local batchsize = tonumber(ARGV[1])
+      local result = redis.call(\'#{@command_map.fetch('lrange', 'lrange')}\', KEYS[1], 0, batchsize)
+      redis.call(\'#{@command_map.fetch('ltrim', 'ltrim')}\', KEYS[1], batchsize + 1, -1)
+      return result
+EOF
+    @redis_script_sha = redis.script(:load, redis_script)
   end
 
 end end end # Redis Inputs  LogStash
