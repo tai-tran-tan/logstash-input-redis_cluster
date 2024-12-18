@@ -69,7 +69,8 @@ module LogStash module Inputs class RedisCluster < LogStash::Inputs::Threadable
     @logger.info("HOST " + host.to_s)
     @host = host.first
     @port = host.last
-    @redis_url = @path.nil? ? "redis://#{@password}@#{@host}:#{@port}/#{@db}" : "#{@password}@#{@path}/#{@db}"
+    password = @password.nil? ? "" : "*******"
+    @redis_url = @path.nil? ? "redis://#{password}@#{@host}:#{@port}/#{@db}" : "#{password}@#{@path}/#{@db}"
 
     # just switch on data_type once
     if @data_type == 'list' || @data_type == 'dummy'
@@ -86,7 +87,6 @@ module LogStash module Inputs class RedisCluster < LogStash::Inputs::Threadable
     @list_method = batched? ? method(:list_batch_listener) : method(:list_single_listener)
 
     @identity = "#{@redis_url} #{@data_type}:#{@key}"
-    puts "Identity: " + @identity
     @logger.info("Registering Redis", :identity => @identity)
   end # def register
 
@@ -111,10 +111,7 @@ module LogStash module Inputs class RedisCluster < LogStash::Inputs::Threadable
     begin
       cluster = RedisClient.cluster(nodes: @nodes, fixed_hostname: fixed_hostname).new_client
       
-      puts "Cluster initialized"
-      msg = "Pinging cluster... <= " + cluster.call('PING')
-      @logger.info(msg)
-      puts msg
+      @logger.info("Cluster initialized, Pinging cluster... <= " + cluster.call('PING'))
 
       slot = cluster.call('CLUSTER', 'KEYSLOT', key).to_i
       return cluster.call('CLUSTER', 'NODES').lines
@@ -167,7 +164,7 @@ module LogStash module Inputs class RedisCluster < LogStash::Inputs::Threadable
       @logger.warn("Parameter 'path' is set, ignoring parameters: 'host' and 'port'")
       params[:path] = @path
     end
-
+    @logger.debug("Redis param", params)
     params
   end
 

@@ -1,0 +1,5 @@
+[{
+    "sha1": "d424dcae967165f2ace0efffb43366e1d9eacd0d",
+    "url": "https://github.com/redis-rb/redis-cluster-client/archive/refs/tags/v0.13.1.tar.gz",
+    "files": [ "lib/redis-cluster-client.rb" ]
+}]

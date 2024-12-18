@@ -24,8 +24,8 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency 'logstash-codec-json'
   s.add_runtime_dependency 'redis', '>= 4.0.1', '< 5'
+  s.add_runtime_dependency 'redis-cluster-client', '>=0.13.1'
 
   s.add_development_dependency 'logstash-devutils', '>= 0.0.16'
-  s.add_development_dependency 'redis-cluster-client'
 end
 
