@@ -48,7 +48,7 @@ jobs:
         chmod 0600 $HOME/.gem/credentials
         printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n:status: :ok\n" > $HOME/.gem/credentials
         bundle install
-        ./bin/gem build *.gemspec
-        ./bin/bundle exec rake publish_gem
+        gem build *.gemspec
+        bundle exec rake publish_gem
       env:
         GEM_HOST_API_KEY: "${{secrets.RUBYGEMS_AUTH_TOKEN}}"
