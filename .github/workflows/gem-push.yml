@@ -24,9 +24,13 @@ jobs:
       #   ruby-version: jruby
     - name: Publish to GPR
       run: |
-        cd $HOME
-        curl -s -L https://artifacts.elastic.co/downloads/logstash/logstash-8.17.0-linux-x86_64.tar.gz | tar xz 
-        cd logstash-8.17.0
+        curl -s -L https://artifacts.elastic.co/downloads/logstash/logstash-8.17.0-linux-x86_64.tar.gz | tar -xz -C $HOME
+        export LOGSTASH_HOME=$HOME/logstash-8.17.0
+        export JRUBY_HOME=$LOGSTASH_HOME/vendor/jruby
+        export PATH=$PATH:$LOGSTASH_HOME/bin:$JRUBY_HOME/bin
+        which logstash
+        which gem 
+        which bundle
         mkdir -p $HOME/.gem
         touch $HOME/.gem/credentials
         chmod 0600 $HOME/.gem/credentials
