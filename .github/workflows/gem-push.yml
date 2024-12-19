@@ -37,7 +37,7 @@ jobs:
         mkdir -p $HOME/.gem
         touch $HOME/.gem/credentials
         chmod 0600 $HOME/.gem/credentials
-        curl -sLu $GEM_KEY https://rubygems.org/api/v1/api_key.yaml > $HOME/.gem/credentials
+        curl -sLu ${GEM_KEY} https://rubygems.org/api/v1/api_key.yaml > $HOME/.gem/credentials
         bundle install
         gem build *.gemspec
         # gem push --KEY github --host https://rubygems.pkg.github.com/${OWNER} *.gem
