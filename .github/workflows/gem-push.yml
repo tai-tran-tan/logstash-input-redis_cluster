@@ -20,12 +20,13 @@ jobs:
     # To automatically get bug fixes and new Ruby versions for ruby/setup-ruby,
     # change this to (see https://github.com/ruby/setup-ruby#versioning):
     # uses: ruby/setup-ruby@v1
-      uses: ruby/setup-ruby@v1 # v1.146.0
-      with:
-        ruby-version: jruby
+      # uses: ruby/setup-ruby@v1 # v1.146.0
+      # with:
+      #   ruby-version: jruby
 
     - name: Publish to GPR
       run: |
+        
         mkdir -p $HOME/.gem
         touch $HOME/.gem/credentials
         chmod 0600 $HOME/.gem/credentials
@@ -38,12 +39,17 @@ jobs:
 
     - name: Publish to RubyGems
       run: |
+        cd $HOME
+        wget https://artifacts.elastic.co/downloads/logstash/logstash-8.17.0-linux-x86_64.tar.gz
+        tar -xzfv logstash-8.17.0-linux-x86_64.tar.gz
+        rm -fv logstash-8.17.0-linux-x86_64.tar.gz
+        cd logstash-8.17.0
         mkdir -p $HOME/.gem
         touch $HOME/.gem/credentials
         chmod 0600 $HOME/.gem/credentials
         printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n:status: :ok\n" > $HOME/.gem/credentials
         bundle install
-        gem build *.gemspec
-        bundle exec rake publish_gem
+        ./bin/gem build *.gemspec
+        ./bin/bundle exec rake publish_gem
       env:
         GEM_HOST_API_KEY: "${{secrets.RUBYGEMS_AUTH_TOKEN}}"
