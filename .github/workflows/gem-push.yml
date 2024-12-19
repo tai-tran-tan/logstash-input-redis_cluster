@@ -24,8 +24,8 @@ jobs:
       #   ruby-version: jruby
     - name: Publish to GPR
       run: |
-        sudo gem uninstall -aIx
         sudo gem cleanup
+        sudo gem uninstall -aIx
         curl -s -L https://artifacts.elastic.co/downloads/logstash/logstash-8.17.0-linux-x86_64.tar.gz | tar -xz -C $HOME
         export LOGSTASH_HOME=$HOME/logstash-8.17.0
         export JRUBY_HOME=$LOGSTASH_HOME/vendor/jruby
