@@ -45,6 +45,7 @@ module LogStash module Inputs class RedisCluster < LogStash::Inputs::Threadable
   # Initial connection timeout in seconds.
   config :timeout, :validate => :number, :default => 5
 
+  config :username, :validate => :string, :default => "default"
   # Password to authenticate with. There is no authentication by default.
   config :password, :validate => :password
 
@@ -104,12 +105,15 @@ module LogStash module Inputs class RedisCluster < LogStash::Inputs::Threadable
   private
 
   def find_redis_node(key)
-    username = 'foo'
-    password = 'bitnami'
     fixed_hostname = @fixed_hostname
     @logger.info("Initializing plugin")
     begin
-      cluster = RedisClient.cluster(nodes: @nodes, fixed_hostname: fixed_hostname).new_client
+      cluster = RedisClient.cluster(
+        nodes: @nodes, 
+        fixed_hostname: fixed_hostname, 
+        username: @username,
+        password: @password
+        ).new_client
       
       @logger.info("Cluster initialized, Pinging cluster... <= " + cluster.call('PING'))
 
