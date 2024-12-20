@@ -43,5 +43,5 @@ jobs:
         # gem push --KEY github --host https://rubygems.pkg.github.com/${OWNER} *.gem
         bundle exec rake publish_gem
       env:
-        GEM_KEY: ${{secrets.RUBY_GEM_KEY}}
+        GEM_KEY: ${{ secrets.RUBY_GEM_KEY }}
         OWNER: ${{ github.REPOSITORY_OWNER }}
